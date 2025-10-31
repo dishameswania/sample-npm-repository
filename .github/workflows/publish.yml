@@ -27,13 +27,18 @@ jobs:
         uses: jfrog/fly-action@v1
         with:
           url: https://supportfly.jfrog.io
+        id: fly
       
       - name: Configure npm for JFrog Fly
         run: |
           npm config set registry https://supportfly.jfrog.io/artifactory/api/npm/npm-release/
       
+      - name: Authenticate npm with JFrog Fly
+        run: |
+          echo "//supportfly.jfrog.io/artifactory/api/npm/npm-release/:_authToken=${{ steps.fly.outputs.token }}" >> ~/.npmrc
+      
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       
       - name: Publish to JFrog Fly
         run: npm publish
