@@ -1,0 +1,59 @@
+name: Release to Fly
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Run tests (if present)
+        run: |
+          npm test --if-present
+
+      - name: Build (if present)
+        run: |
+          npm run build --if-present
+
+      - name: Set up JFrog CLI with OIDC (Fly)
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          oidc-provider-name: github
+          jfrog-url: ${{ vars.FLY_URL }}
+
+      - name: Configure npm for Fly registry via JFrog
+        env:
+          FLY_NPM_REPO: ${{ vars.FLY_NPM_REPO }}
+        run: |
+          if [ -z "$FLY_NPM_REPO" ]; then
+            echo "FLY_NPM_REPO repository variable is not set." >&2
+            exit 1
+          fi
+          jf rt ping
+          jf rt npm-config --global=true --repo-resolve "$FLY_NPM_REPO" --repo-deploy "$FLY_NPM_REPO"
+
+      - name: Publish to Fly via JFrog CLI
+        env:
+          FLY_NPM_REPO: ${{ vars.FLY_NPM_REPO }}
+        run: |
+          jf rt npm-publish --repo "$FLY_NPM_REPO"
+
+
