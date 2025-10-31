@@ -39,6 +39,16 @@ jobs:
           oidc-provider-name: github
           jfrog-url: ${{ vars.FLY_URL }}
 
+      - name: Inspect OIDC token (masked) and print claims
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl -sSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=github" | python3 -c 'import sys,json; print(json.load(sys.stdin)["value"])')
+          echo "::add-mask::$TOKEN"
+          echo "OIDC_TOKEN_PREFIX=${TOKEN:0:20}..."
+          export TOKEN
+          echo "OIDC token claims:"
+          python3 -c 'import os,base64; tok=os.environ["TOKEN"]; p=tok.split(".")[1]; p+="="*((4-len(p)%4)%4); print(base64.urlsafe_b64decode(p).decode())'
+
       - name: Configure npm for Fly registry via JFrog
         env:
           FLY_NPM_REPO: ${{ vars.FLY_NPM_REPO }}
