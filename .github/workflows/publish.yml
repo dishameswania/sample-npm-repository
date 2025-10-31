@@ -33,7 +33,7 @@ jobs:
           npm config set registry https://supportfly.jfrog.io/artifactory/api/npm/npm-release/
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Publish to JFrog Fly
         run: npm publish
