@@ -1,0 +1,40 @@
+name: Publish to JFrog Fly
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup JFrog Fly
+        uses: jfrog/fly-action@v1
+        with:
+          url: https://supportfly.jfrog.io
+      
+      - name: Configure npm for JFrog Fly
+        run: |
+          npm config set registry https://supportfly.jfrog.io/artifactory/api/npm/npm-release/
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Publish to JFrog Fly
+        run: npm publish
+      
